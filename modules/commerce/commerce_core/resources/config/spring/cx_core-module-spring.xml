@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+       http://www.springframework.org/schema/beans/spring-beans.xsd
+       http://www.springframework.org/schema/context
+       http://www.springframework.org/schema/context/spring-context.xsd">
+
+    <context:component-scan base-package="com.coretex.commerce.core" />
+
+    <!-- Product images manager -->
+    <bean id="productFileManager"
+                class="com.coretex.commerce.core.manager.ProductFileManagerImpl">
+        <property name="uploadImage">
+            <ref bean="${config.cms.method}ProductAssetsManager"/>
+        </property>
+        <property name="getImage">
+            <ref bean="${config.cms.method}ProductAssetsManager"/>
+        </property>
+        <property name="removeImage">
+            <ref bean="${config.cms.method}ProductAssetsManager"/>
+        </property>
+        <!-- *** Don't remove, required for this bean only *** -->
+        <!--        <beans:property name="configuration">-->
+        <!--            <beans:ref bean="coreConfiguration"/>-->
+        <!--        </beans:property>-->
+    </bean>
+
+    <bean id="httpdProductAssetsManager"
+                class="com.coretex.commerce.core.manager.CmsImageFileManagerImpl"
+                factory-method="getInstance">
+        <!-- internal implementation -->
+        <property name="cacheManager">
+            <ref bean="httpdAssetsManager"/>
+        </property>
+    </bean>
+
+    <!-- httpd -->
+    <bean id="httpdAssetsManager"
+                class="com.coretex.commerce.core.manager.LocalCacheManagerImpl">
+        <constructor-arg value="${config.cms.http.path.location}"/><!-- where files are copied on disk -->
+    </bean>
+
+    <bean id="productsItemTypeFeaturedCacheSegment" class="com.coretex.core.activeorm.cache.impl.DefaultCacheSegment">
+        <constructor-arg name="cacheKeyComputationStrategy" ref="featuredCacheKeyComputationStrategy"/>
+        <constructor-arg name="cacheValueStoringStrategy" ref="streamAsListCacheValueStoringStrategy"/>
+        <constructor-arg name="cacheValueRetrievingStrategy" ref="streamAsListCacheValueStoringStrategy"/>
+        <constructor-arg name="ctxClass" value="com.coretex.core.activeorm.cache.impl.FeaturedStatementCacheContext"/>
+        <constructor-arg name="invalidationCtxClass" value="com.coretex.core.activeorm.cache.impl.ItemBasedCacheInvalidationContext"/>
+        <constructor-arg name="cacheManager">
+            <bean class="com.coretex.core.activeorm.cache.impl.GuavaCacheManager">
+                <constructor-arg ref="defaultCacheConfiguration"/>
+            </bean>
+        </constructor-arg>
+        <constructor-arg name="features">
+            <list>
+                <bean class="com.coretex.core.activeorm.cache.features.ItemTypeCacheSegmentFeature">
+                    <constructor-arg name="type" value="#{T(com.coretex.items.cx_core.AbstractProductItem).ITEM_TYPE}"/>
+                    <constructor-arg name="cortexContext" ref="defaultMetaTypeProvider"/>
+                </bean>
+            </list>
+        </constructor-arg>
+    </bean>
+
+</beans>
